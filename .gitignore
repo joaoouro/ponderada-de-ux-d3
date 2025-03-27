@@ -1,0 +1,25 @@
+# Arquivos do sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Arquivos de ambiente de desenvolvimento
+.vscode/
+.idea/
+*.sublime-*
+
+# Arquivos de dependências
+node_modules/
+package-lock.json
+yarn.lock
+
+# Arquivos de build/output
+dist/
+build/
+*.min.js
+*.min.css
+
+# Arquivos temporários
+*.tmp
+*.log
+*.bak 

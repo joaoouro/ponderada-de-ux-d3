@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gráfico de Índices CPI</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Evolução dos Índices CPI e Core CPI</h1>
+        <div class="chart-container">
+            <canvas id="meuGrafico"></canvas>
+            <div class="loading-animation">
+                <div class="spinner"></div>
+                <span>Carregando dados...</span>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="timeline-container">
+                <div class="timeline-years">
+                    <span>2021</span>
+                    <span>2022</span>
+                    <span>2023</span>
+                    <span>2024</span>
+                    <span>2025</span>
+                </div>
+                <div class="timeline-track">
+                    <div class="timeline-progress"></div>
+                    <div class="timeline-handle" title="Arraste para navegar pelos anos"></div>
+                </div>
+                <div class="timeline-current">
+                    <span id="data-atual">01/2021</span>
+                </div>
+            </div>
+            
+            <div class="controls-buttons">
+                <button id="btn-play" class="btn-control">
+                    <span class="icon">▶</span>
+                    <span class="label">Animar</span>
+                </button>
+                <button id="btn-reset" class="btn-control">
+                    <span class="icon">↺</span>
+                    <span class="label">Reiniciar</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="legenda">
+            <div class="legenda-item">
+                <div class="cor-cpi"></div>
+                <span>CPI</span>
+                <span id="valor-cpi" class="valor-atual">0.00%</span>
+            </div>
+            <div class="legenda-item">
+                <div class="cor-core-cpi"></div>
+                <span>Core CPI</span>
+                <span id="valor-core-cpi" class="valor-atual">0.00%</span>
+            </div>
+        </div>
+        
+        <div class="data-cards">
+            <div class="data-card cpi-card">
+                <div class="card-header">CPI</div>
+                <div class="card-value" id="card-cpi-value">0.00%</div>
+                <div class="card-trend" id="card-cpi-trend">
+                    <span class="trend-icon">–</span>
+                    <span class="trend-value">0.00%</span>
+                </div>
+            </div>
+            <div class="data-card core-card">
+                <div class="card-header">Core CPI</div>
+                <div class="card-value" id="card-core-value">0.00%</div>
+                <div class="card-trend" id="card-core-trend">
+                    <span class="trend-icon">–</span>
+                    <span class="trend-value">0.00%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/script.js"></script>
+</body>
+</html> 
