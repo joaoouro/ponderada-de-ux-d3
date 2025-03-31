@@ -3,15 +3,335 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gráfico de Índices CPI</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <title>Evolução dos Índices CPI e Core CPI</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-top: 0;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 450px;
+            margin-bottom: 30px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        #chart-area {
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .loading-animation {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #2c3e50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .controls {
+            margin-bottom: 20px;
+        }
+        
+        .timeline-container {
+            margin-bottom: 15px;
+        }
+        
+        .timeline-years {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            padding: 0 10px;
+        }
+        
+        .timeline-years span {
+            font-size: 13px;
+            color: #666;
+            position: relative;
+        }
+        
+        .timeline-track {
+            position: relative;
+            height: 8px;
+            background-color: #e0e5ec;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .timeline-progress {
+            position: absolute;
+            height: 100%;
+            background-color: #333;  /* Preto em vez de azul */
+            border-radius: 4px;
+            width: 0%;
+        }
+        
+        .timeline-handle {
+            position: absolute;
+            left: 0%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 16px;
+            height: 16px;
+            background-color: #222;  /* Preto mais escuro para o handle */
+            border: 2px solid white;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            z-index: 2;
+        }
+        
+        .timeline-current {
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+        
+        .controls-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .btn-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 15px;
+            border: none;
+            background-color: #333;  /* Preto em vez de azul */
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 14px;
+        }
+        
+        .btn-control:hover {
+            background-color: #555;  /* Cinza escuro no hover */
+        }
+        
+        .btn-control .icon {
+            margin-right: 6px;
+        }
+        
+        .legenda {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 25px;
+        }
+        
+        .legenda-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .cor-cpi, .cor-core-cpi {
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
+        }
+        
+        .cor-cpi {
+            background-color: #ff6b6b;
+        }
+        
+        .cor-core-cpi {
+            background-color: #3465a4;  /* Azul em vez de verde */
+        }
+        
+        .valor-atual {
+            font-weight: bold;
+            margin-left: 5px;
+        }
+        
+        .floating-values {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background-color: rgba(255, 255, 255, 0.85);
+            border-radius: 6px;
+            padding: 8px 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            font-size: 14px;
+            z-index: 10;
+        }
+        
+        .float-value {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            padding: 3px 0;
+        }
+        
+        .value-label {
+            font-weight: 600;
+        }
+        
+        .value-number {
+            font-weight: 700;
+        }
+        
+        .cpi-float .value-label {
+            color: #ff6b6b;
+        }
+        
+        .core-float .value-label {
+            color: #3465a4;
+        }
+        
+        .value-text {
+            font-size: 14px;
+            dominant-baseline: middle;
+        }
+        
+        .trend-text {
+            font-size: 13px;
+            dominant-baseline: middle;
+            fill: #777;
+        }
+        
+        .trend-up {
+            fill: #e74c3c;
+        }
+        
+        .trend-down {
+            fill: #27ae60;
+        }
+        
+        /* D3 relacionado */
+        .tooltip {
+            position: absolute;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            pointer-events: none;
+            font-size: 12px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .axis path, .axis line {
+            stroke: #ccc;
+        }
+        
+        .axis text {
+            fill: #666;
+            font-size: 11px;
+        }
+        
+        .focus-line {
+            stroke: #aaa;
+            stroke-width: 1.5;
+            stroke-dasharray: 3, 3;
+            pointer-events: none;
+        }
+        
+        .focus-circle {
+            pointer-events: none;
+            stroke: white;
+            stroke-width: 2;
+        }
+        
+        .focus-circle.cpi {
+            fill: #ff6b6b;
+        }
+        
+        .focus-circle.core-cpi {
+            fill: #3465a4;  /* Azul em vez de verde */
+        }
+        
+        /* Instruções de zoom */
+        .description-container {
+            margin-bottom: 25px;
+        }
+        
+        .chart-description-top {
+            background-color: #f8f9fa;
+            border-left: 4px solid #333;  /* Preto em vez de azul */
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-size: 15px;
+            line-height: 1.5;
+            color: #333;
+        }
+        
+        .axis-title {
+            font-size: 12px;
+            fill: #777;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Evolução dos Índices CPI e Core CPI</h1>
+        <div class="description-container">
+            <p class="chart-description-top">
+                Esta visualização apresenta a evolução do Índice de Preços ao Consumidor (CPI) e seu núcleo (Core CPI) 
+                entre 2021 e 2025. O gráfico mostra como os índices de inflação variaram ao longo do tempo, 
+                permitindo a análise de tendências e comparação entre o índice geral e o núcleo da inflação. 
+                <br><br>
+                <strong>Use a roda do mouse para zoom e arraste para mover o gráfico.</strong>
+                <br><br>
+                <em>Visualização elaborada por: Eduardo Fidelis e João Preto</em>
+            </p>
+        </div>
         <div class="chart-container">
-            <canvas id="meuGrafico"></canvas>
-            <div class="loading-animation">
+            <div id="chart-area"></div>
+            <div class="loading-animation" id="loading">
                 <div class="spinner"></div>
                 <span>Carregando dados...</span>
             </div>
@@ -27,8 +347,8 @@
                     <span>2025</span>
                 </div>
                 <div class="timeline-track">
-                    <div class="timeline-progress"></div>
-                    <div class="timeline-handle" title="Arraste para navegar pelos anos"></div>
+                    <div class="timeline-progress" id="timeline-progress"></div>
+                    <div class="timeline-handle" id="timeline-handle" title="Arraste para navegar pelos anos"></div>
                 </div>
                 <div class="timeline-current">
                     <span id="data-atual">01/2021</span>
@@ -60,25 +380,770 @@
             </div>
         </div>
         
-        <div class="data-cards">
-            <div class="data-card cpi-card">
-                <div class="card-header">CPI</div>
-                <div class="card-value" id="card-cpi-value">0.00%</div>
-                <div class="card-trend" id="card-cpi-trend">
-                    <span class="trend-icon">–</span>
-                    <span class="trend-value">0.00%</span>
-                </div>
+        <!-- Valores flutuantes no canto superior direito do gráfico -->
+        <div class="floating-values" id="floating-values">
+            <div class="float-value cpi-float">
+                <span class="value-label">CPI:</span>
+                <span class="value-number" id="card-cpi-value">0.00%</span>
             </div>
-            <div class="data-card core-card">
-                <div class="card-header">Core CPI</div>
-                <div class="card-value" id="card-core-value">0.00%</div>
-                <div class="card-trend" id="card-core-trend">
-                    <span class="trend-icon">–</span>
-                    <span class="trend-value">0.00%</span>
-                </div>
+            <div class="float-value core-float">
+                <span class="value-label">Core CPI:</span>
+                <span class="value-number" id="card-core-value">0.00%</span>
             </div>
         </div>
     </div>
-    <script src="js/script.js"></script>
+
+    <div id="tooltip" class="tooltip"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script>
+        // Configurações iniciais
+        const colors = {
+            cpi: "#ff6b6b",
+            coreCpi: "#3465a4"  // Azul em vez de verde
+        };
+        
+        let data = [];
+        let isPlaying = false;
+        let animationInterval;
+        let currentIndex = 0;
+        let zoomTransform = null;
+
+        // Elementos do DOM
+        const loading = document.getElementById('loading');
+        const tooltipElement = document.getElementById('tooltip');
+        const timelineProgress = document.getElementById('timeline-progress');
+        const timelineHandle = document.getElementById('timeline-handle');
+        const dataAtual = document.getElementById('data-atual');
+        const valorCpi = document.getElementById('valor-cpi');
+        const valorCoreCpi = document.getElementById('valor-core-cpi');
+        const cardCpiValue = document.getElementById('card-cpi-value');
+        const cardCoreValue = document.getElementById('card-core-value');
+        const cardCpiTrend = document.getElementById('card-cpi-trend');
+        const cardCoreTrend = document.getElementById('card-core-trend');
+        const btnPlay = document.getElementById('btn-play');
+        const btnReset = document.getElementById('btn-reset');
+
+        // Dimensões do gráfico
+        const margin = { top: 40, right: 60, bottom: 50, left: 60 };
+        const chartContainer = document.getElementById('chart-area');
+        const width = chartContainer.clientWidth - margin.left - margin.right;
+        const height = chartContainer.clientHeight - margin.top - margin.bottom;
+
+        // Criar SVG base
+        const svg = d3.select('#chart-area')
+            .append('svg')
+            .attr('width', '100%')
+            .attr('height', '100%')
+            .attr('preserveAspectRatio', 'xMinYMin meet')
+            .attr('viewBox', `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+            .append('g')
+            .attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+        // Escalas iniciais
+        const xScale = d3.scaleTime().range([0, width]);
+        const yScale = d3.scaleLinear().range([height, 0]);
+
+        // Elementos adicionais para clip e foco
+        svg.append('defs').append('clipPath')
+            .attr('id', 'clip')
+            .append('rect')
+            .attr('width', width)
+            .attr('height', height);
+
+        const chartGroup = svg.append('g')
+            .attr('clip-path', 'url(#clip)');
+
+        // Criar eixos
+        const xAxis = svg.append('g')
+            .attr('class', 'axis x-axis')
+            .attr('transform', `translate(0, ${height})`);
+
+        const yAxis = svg.append('g')
+            .attr('class', 'axis y-axis');
+
+        // Adicionar títulos dos eixos
+        svg.append('text')
+            .attr('class', 'axis-title')
+            .attr('text-anchor', 'middle')
+            .attr('x', width / 2)
+            .attr('y', height + margin.bottom - 10)
+            .text('Data');
+
+        svg.append('text')
+            .attr('class', 'axis-title')
+            .attr('text-anchor', 'middle')
+            .attr('transform', 'rotate(-90)')
+            .attr('x', -height / 2)
+            .attr('y', -margin.left + 15)
+            .text('Índice %');
+
+        // Grupo para foco (hover)
+        const focus = svg.append('g')
+            .style('display', 'none');
+
+        focus.append('line')
+            .attr('class', 'focus-line')
+            .attr('y1', 0)
+            .attr('y2', height);
+
+        focus.append('circle')
+            .attr('class', 'focus-circle cpi')
+            .attr('r', 5);
+
+        focus.append('circle')
+            .attr('class', 'focus-circle core-cpi')
+            .attr('r', 5);
+
+        // Função principal de carregamento e renderização
+        async function loadAndRenderData() {
+            try {
+                // Carregar dados do CSV
+                const response = await fetch('Template de gráfico de linhas.csv');
+                const content = await response.text();
+                
+                // Parsear CSV
+                const parseResult = Papa.parse(content, {
+                    header: true,
+                    skipEmptyLines: true,
+                    delimiter: ';',
+                    dynamicTyping: true
+                });
+                
+                // Formatar dados
+                data = parseResult.data.map((d, i) => ({
+                    date: d3.timeParse('%d/%m/%Y')(d.DATA),
+                    cpi: d.CPI,
+                    coreCpi: d['Core CPI'],
+                    index: i // Armazenar índice para animação
+                }));
+                
+                // Esconder loading
+                loading.style.display = 'none';
+                
+                // Renderizar o gráfico
+                setupChart();
+                
+                // Inicializar controladores
+                setupControls();
+                
+                // Atualizar interface com os valores iniciais
+                updateUIWithDataPoint(data[0]);
+                
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                loading.innerHTML = '<p style="color: red;">Erro ao carregar dados. Tente novamente.</p>';
+            }
+        }
+
+        // Configuração inicial do gráfico
+        function setupChart() {
+            // Configurar domínios das escalas
+            xScale.domain(d3.extent(data, d => d.date));
+            yScale.domain([0, d3.max(data, d => Math.max(d.cpi, d.coreCpi)) * 1.1]);
+            
+            // Configurar linhas
+            const cpiLine = d3.line()
+                .x(d => xScale(d.date))
+                .y(d => yScale(d.cpi))
+                .curve(d3.curveMonotoneX);
+                
+            const coreCpiLine = d3.line()
+                .x(d => xScale(d.date))
+                .y(d => yScale(d.coreCpi))
+                .curve(d3.curveMonotoneX);
+            
+            // Adicionar eixos
+            xAxis.call(d3.axisBottom(xScale).tickFormat(d3.timeFormat('%b %Y')));
+            yAxis.call(d3.axisLeft(yScale).ticks(5).tickFormat(d => d + '%'));
+            
+            // Adicionar linhas ao gráfico
+            const cpiPath = chartGroup.append('path')
+                .datum(data)
+                .attr('class', 'line cpi-line')
+                .attr('fill', 'none')
+                .attr('stroke', colors.cpi)
+                .attr('stroke-width', 2.5)
+                .attr('d', cpiLine);
+                
+            const coreCpiPath = chartGroup.append('path')
+                .datum(data)
+                .attr('class', 'line core-cpi-line')
+                .attr('fill', 'none')
+                .attr('stroke', colors.coreCpi)
+                .attr('stroke-width', 2.5)
+                .attr('d', coreCpiLine);
+            
+            // Animar linhas
+            const pathLength = cpiPath.node().getTotalLength();
+            
+            cpiPath
+                .attr('stroke-dasharray', pathLength)
+                .attr('stroke-dashoffset', pathLength)
+                .transition()
+                .duration(2000)
+                .attr('stroke-dashoffset', 0);
+                
+            coreCpiPath
+                .attr('stroke-dasharray', pathLength)
+                .attr('stroke-dashoffset', pathLength)
+                .transition()
+                .duration(2000)
+                .attr('stroke-dashoffset', 0);
+            
+            // Adicionar pontos
+            addDataPoints();
+            
+            // Configurar interatividade
+            setupInteractivity();
+            
+            // Configurar zoom avançado
+            setupZoom();
+            
+            // Adicionar caixa de valores flutuantes diretamente no SVG
+            const valueBoxGroup = svg.append('g')
+                .attr('class', 'value-box-group')
+                .attr('transform', `translate(${width - 150}, 10)`);
+                
+            // Adicionar retângulo de fundo
+            valueBoxGroup.append('rect')
+                .attr('width', 140)
+                .attr('height', 80)
+                .attr('rx', 4)
+                .attr('ry', 4)
+                .attr('fill', 'rgba(255, 255, 255, 0.9)')
+                .attr('stroke', '#eee')
+                .attr('stroke-width', 1);
+                
+            // Adicionar texto para CPI
+            const cpiValueText = valueBoxGroup.append('text')
+                .attr('x', 10)
+                .attr('y', 24)
+                .attr('class', 'value-text');
+                
+            cpiValueText.append('tspan')
+                .attr('fill', colors.cpi)
+                .attr('font-weight', 600)
+                .text('CPI: ');
+                
+            cpiValueText.append('tspan')
+                .attr('id', 'svg-cpi-value')
+                .attr('font-weight', 700)
+                .text('0.00%');
+                
+            // Adicionar tendência para CPI
+            const cpiTrendText = valueBoxGroup.append('text')
+                .attr('x', 10)
+                .attr('y', 42)
+                .attr('class', 'trend-text');
+                
+            cpiTrendText.append('tspan')
+                .attr('id', 'svg-cpi-trend-icon')
+                .text('–');
+                
+            cpiTrendText.append('tspan')
+                .attr('id', 'svg-cpi-trend-value')
+                .attr('dx', 2)
+                .text('0.00%');
+                
+            // Adicionar texto para Core CPI
+            const coreCpiValueText = valueBoxGroup.append('text')
+                .attr('x', 10)
+                .attr('y', 60)
+                .attr('class', 'value-text');
+                
+            coreCpiValueText.append('tspan')
+                .attr('fill', colors.coreCpi)
+                .attr('font-weight', 600)
+                .text('Core: ');
+                
+            coreCpiValueText.append('tspan')
+                .attr('id', 'svg-core-cpi-value')
+                .attr('font-weight', 700)
+                .text('0.00%');
+                
+            // Adicionar tendência para Core CPI
+            const coreTrendText = valueBoxGroup.append('text')
+                .attr('x', 10)
+                .attr('y', 78)
+                .attr('class', 'trend-text');
+                
+            coreTrendText.append('tspan')
+                .attr('id', 'svg-core-trend-icon')
+                .text('–');
+                
+            coreTrendText.append('tspan')
+                .attr('id', 'svg-core-trend-value')
+                .attr('dx', 2)
+                .text('0.00%');
+                
+            // Remover elemento flutuante fora do SVG
+            const floatingValues = document.getElementById('floating-values');
+            if (floatingValues) {
+                floatingValues.style.display = 'none';
+            }
+        }
+
+        // Adicionar pontos de dados ao gráfico
+        function addDataPoints() {
+            const pointsGroup = chartGroup.append('g')
+                .attr('class', 'points-group');
+                
+            // Pontos para CPI
+            pointsGroup.selectAll('.cpi-point')
+                .data(data)
+                .enter()
+                .append('circle')
+                .attr('class', 'point cpi-point')
+                .attr('cx', d => xScale(d.date))
+                .attr('cy', d => yScale(d.cpi))
+                .attr('r', 0) // Começar com raio 0
+                .attr('fill', colors.cpi)
+                .attr('stroke', 'white')
+                .attr('stroke-width', 1.5)
+                .style('opacity', 0) // Começar invisível
+                .transition()
+                .delay((d, i) => i * 40)
+                .duration(300)
+                .attr('r', 4)
+                .style('opacity', 1);
+                
+            // Pontos para Core CPI
+            pointsGroup.selectAll('.core-cpi-point')
+                .data(data)
+                .enter()
+                .append('circle')
+                .attr('class', 'point core-cpi-point')
+                .attr('cx', d => xScale(d.date))
+                .attr('cy', d => yScale(d.coreCpi))
+                .attr('r', 0)
+                .attr('fill', colors.coreCpi)
+                .attr('stroke', 'white')
+                .attr('stroke-width', 1.5)
+                .style('opacity', 0)
+                .transition()
+                .delay((d, i) => i * 40)
+                .duration(300)
+                .attr('r', 4)
+                .style('opacity', 1);
+        }
+
+        // Configurar interatividade
+        function setupInteractivity() {
+            // Adicionar tooltip e interatividade por hover
+            const tooltip = d3.select('#tooltip');
+            const bisectDate = d3.bisector(d => d.date).left;
+            
+            // Adicionar interatividade aos pontos
+            d3.selectAll('.point')
+                .on('mouseover', function(event, d) {
+                    d3.select(this)
+                        .transition()
+                        .duration(100)
+                        .attr('r', 6);
+                        
+                    const isCoreCPI = d3.select(this).classed('core-cpi-point');
+                    showTooltip(event, d, isCoreCPI);
+                })
+                .on('mouseout', function() {
+                    d3.select(this)
+                        .transition()
+                        .duration(100)
+                        .attr('r', 4);
+                        
+                    hideTooltip();
+                });
+                
+            // Área sensível para interatividade sobre o gráfico inteiro
+            svg.append('rect')
+                .attr('class', 'overlay')
+                .attr('width', width)
+                .attr('height', height)
+                .style('fill', 'none')
+                .style('pointer-events', 'all')
+                .on('mouseover', () => focus.style('display', null))
+                .on('mouseout', () => {
+                    focus.style('display', 'none');
+                    hideTooltip();
+                })
+                .on('mousemove', mousemoveHandler);
+                
+            function mousemoveHandler(event) {
+                const currentXScale = zoomTransform ? zoomTransform.rescaleX(xScale) : xScale;
+                const mouseX = d3.pointer(event)[0];
+                const date0 = currentXScale.invert(mouseX);
+                const i = bisectDate(data, date0, 1);
+                
+                if (i >= data.length) return;
+                
+                const d0 = data[i - 1];
+                const d1 = data[i];
+                
+                if (!d0 || !d1) return;
+                
+                const d = date0 - d0.date > d1.date - date0 ? d1 : d0;
+                
+                // Atualizar linha de foco
+                focus.select('.focus-line')
+                    .attr('x1', currentXScale(d.date))
+                    .attr('x2', currentXScale(d.date));
+                    
+                // Atualizar círculos de foco
+                focus.select('.cpi')
+                    .attr('cx', currentXScale(d.date))
+                    .attr('cy', yScale(d.cpi));
+                    
+                focus.select('.core-cpi')
+                    .attr('cx', currentXScale(d.date))
+                    .attr('cy', yScale(d.coreCpi));
+                
+                // Mostrar tooltip
+                showTooltipForData(event, d);
+            }
+        }
+
+        // Configuração de zoom avançado
+        function setupZoom() {
+            const zoom = d3.zoom()
+                .scaleExtent([1, 4]) // Limites de zoom: 1x a 4x
+                .translateExtent([[0, 0], [width, height]])
+                .extent([[0, 0], [width, height]])
+                .on('zoom', zoomed);
+                
+            function zoomed(event) {
+                // Salvar o transform atual para uso em outras funções
+                zoomTransform = event.transform;
+                
+                // Escala atualizada após o zoom
+                const newXScale = event.transform.rescaleX(xScale);
+                
+                // Atualizar o eixo X
+                xAxis.call(d3.axisBottom(newXScale).tickFormat(d3.timeFormat('%b %Y')));
+                
+                // Atualizar as linhas
+                chartGroup.select('.cpi-line')
+                    .attr('d', d3.line()
+                        .x(d => newXScale(d.date))
+                        .y(d => yScale(d.cpi))
+                        .curve(d3.curveMonotoneX));
+                        
+                chartGroup.select('.core-cpi-line')
+                    .attr('d', d3.line()
+                        .x(d => newXScale(d.date))
+                        .y(d => yScale(d.coreCpi))
+                        .curve(d3.curveMonotoneX));
+                
+                // Atualizar os pontos
+                d3.selectAll('.cpi-point')
+                    .attr('cx', d => newXScale(d.date));
+                    
+                d3.selectAll('.core-cpi-point')
+                    .attr('cx', d => newXScale(d.date));
+            }
+            
+            // Aplicar o zoom ao SVG
+            svg.call(zoom)
+                .call(zoom.transform, d3.zoomIdentity);
+                
+            // Desativar clique duplo para resetar
+            svg.on('dblclick.zoom', null);
+        }
+
+        // Configuração dos controles de animação
+        function setupControls() {
+            // Manipulador da timeline
+            let isDragging = false;
+            
+            timelineHandle.addEventListener('mousedown', () => {
+                isDragging = true;
+                document.addEventListener('mousemove', handleDrag);
+                document.addEventListener('mouseup', () => {
+                    isDragging = false;
+                    document.removeEventListener('mousemove', handleDrag);
+                });
+            });
+            
+            // Botões
+            btnPlay.addEventListener('click', togglePlayPause);
+            btnReset.addEventListener('click', resetAnimation);
+            
+            function handleDrag(event) {
+                if (!isDragging) return;
+                
+                const trackRect = document.querySelector('.timeline-track').getBoundingClientRect();
+                let xPosition = event.clientX - trackRect.left;
+                const trackWidth = trackRect.width;
+                
+                // Limitar posição
+                xPosition = Math.max(0, Math.min(xPosition, trackWidth));
+                
+                // Converter para porcentagem
+                const percent = xPosition / trackWidth;
+                
+                // Atualizar posição do handle
+                updateProgressBar(percent);
+                
+                // Atualizar índice atual
+                const newIndex = Math.round(percent * (data.length - 1));
+                currentIndex = newIndex;
+                
+                // Atualizar UI
+                updateUIWithDataPoint(data[currentIndex]);
+            }
+        }
+
+        // Funções auxiliares para interatividade
+        function showTooltip(event, d, isCoreCPI = false) {
+            const formatDate = d3.timeFormat('%B %Y');
+            const tooltip = d3.select('#tooltip');
+            
+            tooltip.html(`
+                <strong>Data:</strong> ${formatDate(d.date)}<br/>
+                <strong>${isCoreCPI ? 'Core CPI' : 'CPI'}:</strong> ${isCoreCPI ? d.coreCpi : d.cpi}%
+            `)
+            .style('left', (event.pageX + 15) + 'px')
+            .style('top', (event.pageY - 30) + 'px')
+            .style('opacity', 0.9);
+        }
+        
+        function showTooltipForData(event, d) {
+            const formatDate = d3.timeFormat('%B %Y');
+            const tooltip = d3.select('#tooltip');
+            
+            tooltip.html(`
+                <strong>Data:</strong> ${formatDate(d.date)}<br/>
+                <strong>CPI:</strong> ${d.cpi}%<br/>
+                <strong>Core CPI:</strong> ${d.coreCpi}%
+            `)
+            .style('left', (event.pageX + 15) + 'px')
+            .style('top', (event.pageY - 30) + 'px')
+            .style('opacity', 0.9);
+        }
+        
+        function hideTooltip() {
+            d3.select('#tooltip')
+                .style('opacity', 0);
+        }
+
+        // Funções de atualização da UI
+        function updateUIWithDataPoint(d) {
+            if (!d) return;
+            
+            const formatDate = d3.timeFormat('%m/%Y');
+            const dateStr = formatDate(d.date);
+            
+            // Atualizar data
+            dataAtual.textContent = dateStr;
+            
+            // Atualizar valores na legenda
+            valorCpi.textContent = d.cpi.toFixed(2) + '%';
+            valorCoreCpi.textContent = d.coreCpi.toFixed(2) + '%';
+            
+            // Atualizar valores no SVG
+            document.getElementById('svg-cpi-value').textContent = d.cpi.toFixed(2) + '%';
+            document.getElementById('svg-core-cpi-value').textContent = d.coreCpi.toFixed(2) + '%';
+            
+            // Verificar se há dados anteriores para calcular tendência
+            if (d.index > 0 && d.index < data.length) {
+                const prevData = data[d.index - 1];
+                
+                // Atualizar tendência para CPI
+                updateSVGTrendInfo('svg-cpi-trend-icon', 'svg-cpi-trend-value', d.cpi - prevData.cpi);
+                
+                // Atualizar tendência para Core CPI
+                updateSVGTrendInfo('svg-core-trend-icon', 'svg-core-trend-value', d.coreCpi - prevData.coreCpi);
+            } else {
+                // Sem dados de tendência para o primeiro ponto
+                resetSVGTrendInfo('svg-cpi-trend-icon', 'svg-cpi-trend-value');
+                resetSVGTrendInfo('svg-core-trend-icon', 'svg-core-trend-value');
+            }
+            
+            // Destacar ponto atual no gráfico
+            highlightCurrentPoint(d.index);
+            
+            // Atualizar barra de progresso na timeline
+            const progress = d.index / (data.length - 1);
+            updateProgressBar(progress);
+        }
+        
+        function updateSVGTrendInfo(iconId, valueId, diff) {
+            const iconElement = document.getElementById(iconId);
+            const valueElement = document.getElementById(valueId);
+            
+            if (!iconElement || !valueElement) return;
+            
+            // Limpar classes anteriores
+            iconElement.classList.remove('trend-up', 'trend-down');
+            valueElement.classList.remove('trend-up', 'trend-down');
+            
+            if (diff > 0) {
+                iconElement.textContent = '↑';
+                iconElement.classList.add('trend-up');
+                valueElement.classList.add('trend-up');
+                valueElement.textContent = '+' + Math.abs(diff).toFixed(2) + '%';
+            } else if (diff < 0) {
+                iconElement.textContent = '↓';
+                iconElement.classList.add('trend-down');
+                valueElement.classList.add('trend-down');
+                valueElement.textContent = '-' + Math.abs(diff).toFixed(2) + '%';
+            } else {
+                iconElement.textContent = '–';
+                valueElement.textContent = '0.00%';
+            }
+        }
+        
+        function resetSVGTrendInfo(iconId, valueId) {
+            const iconElement = document.getElementById(iconId);
+            const valueElement = document.getElementById(valueId);
+            
+            if (!iconElement || !valueElement) return;
+            
+            iconElement.classList.remove('trend-up', 'trend-down');
+            valueElement.classList.remove('trend-up', 'trend-down');
+            iconElement.textContent = '–';
+            valueElement.textContent = '0.00%';
+        }
+        
+        function updateTrendInfo(element, diff) {
+            const trendIcon = element.querySelector('.trend-icon');
+            const trendValue = element.querySelector('.trend-value');
+            
+            // Remover classes anteriores
+            element.classList.remove('trend-up', 'trend-down');
+            
+            if (diff > 0) {
+                trendIcon.textContent = '↑';
+                element.classList.add('trend-up');
+                trendValue.textContent = '+' + Math.abs(diff).toFixed(2) + '%';
+            } else if (diff < 0) {
+                trendIcon.textContent = '↓';
+                element.classList.add('trend-down');
+                trendValue.textContent = '-' + Math.abs(diff).toFixed(2) + '%';
+            } else {
+                trendIcon.textContent = '–';
+                trendValue.textContent = '0.00%';
+            }
+        }
+        
+        function resetTrendInfo(element) {
+            const trendIcon = element.querySelector('.trend-icon');
+            const trendValue = element.querySelector('.trend-value');
+            
+            element.classList.remove('trend-up', 'trend-down');
+            trendIcon.textContent = '–';
+            trendValue.textContent = '0.00%';
+        }
+        
+        function updateProgressBar(progress) {
+            // Limitar entre 0 e 1
+            progress = Math.max(0, Math.min(1, progress));
+            
+            // Atualizar posição do handle e progresso
+            const percent = progress * 100;
+            timelineProgress.style.width = `${percent}%`;
+            timelineHandle.style.left = `${percent}%`;
+        }
+        
+        function highlightCurrentPoint(index) {
+            // Resetar todos os pontos
+            d3.selectAll('.point')
+                .attr('r', 4)
+                .style('stroke-width', 1.5);
+                
+            // Destacar pontos atuais
+            // Corrigir a seleção para garantir que ambos os pontos sejam destacados
+            const cpiPoints = d3.selectAll('.cpi-point');
+            const coreCpiPoints = d3.selectAll('.core-cpi-point');
+            
+            if (index >= 0 && index < data.length) {
+                // Selecionar o ponto CPI no índice atual
+                cpiPoints.nodes().forEach((node, i) => {
+                    if (i === index) {
+                        d3.select(node)
+                            .attr('r', 6)
+                            .style('stroke-width', 2);
+                    }
+                });
+                
+                // Selecionar o ponto Core CPI no índice atual
+                coreCpiPoints.nodes().forEach((node, i) => {
+                    if (i === index) {
+                        d3.select(node)
+                            .attr('r', 6)
+                            .style('stroke-width', 2);
+                    }
+                });
+            }
+        }
+        
+        // Funções de controle de animação
+        function togglePlayPause() {
+            isPlaying = !isPlaying;
+            
+            if (isPlaying) {
+                btnPlay.innerHTML = '<span class="icon">⏸</span><span class="label">Pausar</span>';
+                startAnimation();
+            } else {
+                btnPlay.innerHTML = '<span class="icon">▶</span><span class="label">Animar</span>';
+                stopAnimation();
+            }
+        }
+        
+        function startAnimation() {
+            // Parar animação existente se houver
+            stopAnimation();
+            
+            // Verificar se chegamos ao fim
+            if (currentIndex >= data.length - 1) {
+                currentIndex = 0;
+            }
+            
+            // Iniciar novo intervalo
+            animationInterval = setInterval(() => {
+                currentIndex++;
+                
+                // Verificar se chegamos ao fim
+                if (currentIndex >= data.length) {
+                    currentIndex = 0;
+                    stopAnimation();
+                    btnPlay.innerHTML = '<span class="icon">▶</span><span class="label">Animar</span>';
+                    isPlaying = false;
+                    return;
+                }
+                
+                // Atualizar UI com o próximo ponto
+                updateUIWithDataPoint(data[currentIndex]);
+            }, 500); // Intervalo de 500ms entre atualizações
+        }
+        
+        function stopAnimation() {
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = null;
+            }
+        }
+        
+        function resetAnimation() {
+            // Parar animação
+            stopAnimation();
+            isPlaying = false;
+            btnPlay.innerHTML = '<span class="icon">▶</span><span class="label">Animar</span>';
+            
+            // Resetar índice
+            currentIndex = 0;
+            
+            // Atualizar UI
+            updateUIWithDataPoint(data[0]);
+            
+            // Restaurar zoom
+            svg.transition()
+                .duration(750)
+                .call(d3.zoom().transform, d3.zoomIdentity);
+        }
+        
+        // Iniciar o carregamento e renderização
+        loadAndRenderData();
+    </script>
 </body>
-</html> 
+</html>
